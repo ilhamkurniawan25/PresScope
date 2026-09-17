@@ -1,0 +1,12 @@
+{
+  "background_color": "#ffffff",
+  "dir": "ltr",
+  "display": "standalone",
+  "name": "PressScope",
+  "orientation": "any",
+  "scope": "/",
+  "short_name": "PressScope",
+  "start_url": "/",
+  "theme_color": "#ffffff",
+  "id": "com.ukm.pressscope"
+}
