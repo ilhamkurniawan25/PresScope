@@ -1,0 +1,713 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aplikasi Absensi UKM Cinemascope</title>
+    <style>
+        body { margin: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f3f5f7; display: flex; height: 100vh; color: #333; }
+        
+        /* --- SIDEBAR DESKTOP --- */
+        .sidebar { width: 240px; background-color: #ffffff; border-right: 1px solid #e0e0e0; display: flex; flex-direction: column; transition: 0.3s; z-index: 10; }
+        .sidebar-header { padding: 25px 20px; font-size: 18px; font-weight: bold; color: #007bff; border-bottom: 1px solid #e0e0e0; display: flex; align-items: center; justify-content: center; }
+        .menu { list-style: none; padding: 0; margin: 0; flex-grow: 1; }
+        .menu li { padding: 16px 20px; border-bottom: 1px solid #f9f9f9; cursor: pointer; color: #555; font-size: 14px; display: flex; align-items: center; gap: 12px; transition: 0.2s;}
+        .menu li:hover, .menu li.active { background-color: #f4f6f8; font-weight: bold; color: #007bff; border-left: 4px solid #007bff; }
+        
+        /* --- HEADER HP (MOBILE NAVBAR) --- */
+        .mobile-header { display: none; background: #ffffff; padding: 12px 20px; border-bottom: 1px solid #e0e0e0; align-items: center; justify-content: space-between; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
+        
+        .btn-toggle { 
+            background: #f0f4f8; 
+            border: 1px solid #d1d9e0; 
+            padding: 8px 16px; 
+            border-radius: 20px; 
+            font-size: 14px; 
+            font-weight: 600; 
+            cursor: pointer; 
+            color: #007bff; 
+            display: flex; 
+            align-items: center; 
+            gap: 6px; 
+            transition: 0.2s;
+        }
+        .btn-toggle:active { background: #e2e8f0; }
+
+        .main-content { flex-grow: 1; display: flex; flex-direction: column; overflow: hidden; position: relative; }
+        
+        #area-form, #area-pengaturan { padding: 40px; display: flex; justify-content: center; align-items: flex-start; flex-grow: 1; overflow-y: auto; }
+        .card-form { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); width: 100%; max-width: 400px; }
+        .card-form h2 { margin-top: 0; color: #2c3e50; text-align: center; font-size: 22px; }
+        .form-group { margin-bottom: 16px; }
+        .form-group label { display: block; margin-bottom: 6px; font-size: 13px; font-weight: 600; color: #555; }
+        .form-group input, .form-group select { width: 100%; padding: 11px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; font-family: inherit; font-size: 14px; }
+        .btn-submit { width: 100%; padding: 12px; background-color: #007bff; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 15px; font-weight: bold; margin-top: 10px; transition: 0.2s; }
+        .btn-submit:hover { background-color: #0056b3; }
+        
+        #area-tabel, #area-anggota { display: none; flex-direction: column; flex-grow: 1; }
+        .top-header { background-color: #fff; padding: 18px 30px; border-bottom: 1px solid #e0e0e0; display: flex; justify-content: space-between; align-items: center; }
+        .filter-bar { background-color: #fff; padding: 15px 30px; border-bottom: 1px solid #e0e0e0; display: flex; gap: 12px; font-size: 13px; align-items: center;}
+        .filter-select { border: 1px solid #ddd; padding: 7px 12px; border-radius: 6px; color: #333; cursor: pointer; font-weight: 500; background: #fff;}
+        .table-container { padding: 20px 30px; overflow-y: auto; flex-grow: 1; }
+        table { width: 100%; border-collapse: collapse; background-color: #fff; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+        th, td { padding: 15px 20px; text-align: left; border-bottom: 1px solid #eee; font-size: 14px; }
+        th { background-color: #fafbfc; color: #888; font-weight: 600; text-transform: uppercase; font-size: 11px; letter-spacing: 0.5px; }
+        .avatar { width: 32px; height: 32px; background-color: #e0e4e8; border-radius: 50%; display: inline-flex; justify-content: center; align-items: center; font-weight: bold; color: #555; font-size: 12px; margin-right: 10px; vertical-align: middle;}
+        .status-hadir { color: #27ae60; font-weight: bold; background-color: #e8f8f5; padding: 5px 12px; border-radius: 20px; font-size: 12px; }
+        .badge-divisi { font-size: 11px; padding: 5px 10px; background-color: #f1f2f6; border-radius: 6px; color: #57606f; font-weight: bold; border: 1px solid #dfe4ea;}
+
+        /* --- UI JADWAL --- */
+        #area-jadwal { display: none; flex-direction: column; flex-grow: 1; padding: 20px; overflow-y: auto; align-items: center;}
+        .jadwal-card { background: white; border-radius: 16px; padding: 20px; margin-bottom: 20px; width: 100%; max-width: 500px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+        .jadwal-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #f0f0f0; padding-bottom: 12px; margin-bottom: 15px;}
+        .jadwal-header h3 { margin: 0; font-size: 16px; color: #333; }
+        .badge-status { background: #e6f8eb; color: #219653; padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: bold; }
+        .jadwal-tgl { font-size: 18px; font-weight: bold; color: #001f3f; margin-bottom: 15px; }
+        .jadwal-info-row { display: flex; align-items: flex-start; margin-bottom: 12px; font-size: 14px; color: #4f4f4f; }
+        .jadwal-icon { margin-right: 12px; font-size: 16px; }
+        .jadwal-notes { background: #eef4fa; color: #2c5282; padding: 12px; border-radius: 8px; font-size: 13px; margin: 10px 0 15px 28px; line-height: 1.5; }
+        .btn-unduh { display: block; width: 100%; text-align: center; background: #f4f6f8; color: #555; padding: 12px; border-radius: 25px; text-decoration: none; font-weight: bold; font-size: 14px; margin-top: 20px; border: 1px solid #dfe4ea; transition: 0.2s; box-sizing: border-box;}
+        .btn-unduh:hover { background: #e2e8f0; color: #007bff; }
+        .btn-unduh.aktif { background: #007bff; color: white; border: none; }
+        .btn-unduh.aktif:hover { background: #0056b3; }
+
+        /* --- MEDIA QUERY KHUSUS HP --- */
+        @media screen and (max-width: 768px) {
+            body { flex-direction: column; height: auto; min-height: 100vh; }
+            .mobile-header { display: flex; } 
+            .sidebar { 
+                position: absolute; top: 61px; left: 0; width: 100%; background: #ffffff; 
+                box-shadow: 0 8px 16px rgba(0,0,0,0.1); z-index: 1000; display: none; 
+            }
+            .sidebar.show { display: flex; }
+            .sidebar-header { display: none; } 
+            .menu li { padding: 16px 22px; border-left: none !important; border-bottom: 1px solid #f1f1f1; }
+            .menu li.active { background-color: #f0f4f8; font-weight: bold; color: #007bff; }
+            .main-content { height: auto; flex-grow: 1; }
+            #area-form, #area-pengaturan { padding: 20px 15px; }
+            .card-form { max-width: 100%; padding: 20px; }
+            .filter-bar { flex-direction: column; align-items: stretch; gap: 10px; padding: 15px; }
+            .table-container { padding: 10px; overflow-x: auto; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- HEADER HP -->
+    <div class="mobile-header">
+        <img src="logo.jpg" alt="Logo Cinemascope" style="max-height: 42px; width: auto; object-fit: contain;">
+        <button class="btn-toggle" id="btnToggle">
+            <span style="font-size: 16px;">☰</span> Menu
+        </button>
+    </div>
+
+    <!-- SIDEBAR -->
+    <div class="sidebar" id="sidebarMenu">
+        <div class="sidebar-header">
+            <img src="logo.jpg" alt="Logo Cinemascope" style="width: 100%; max-width: 140px; height: auto;">
+        </div>
+        <ul class="menu">
+            <li class="active">📝 Isi Absensi</li>
+            <li>📋 Data Absensi</li>
+            <li>📅 Jadwal</li>
+            <li>👥 Anggota UKM</li>
+            <li>🔐 Admin</li>
+        </ul>
+    </div>
+
+    <div class="main-content">
+        
+        <!-- FORM ABSENSI -->
+        <div id="area-form">
+            <div class="card-form">
+                <div style="text-align: center; margin-bottom: 15px;">
+                    <img src="logo.jpg" alt="Logo Cinemascope" style="max-width: 95px; height: auto;">
+                </div>
+                <h2>Form Kehadiran</h2>
+                
+                <div id="infoStatusTutup" style="margin-bottom: 15px; padding: 12px; background-color: #f8d7da; color: #721c24; border-radius: 6px; text-align: center; font-size: 13px; font-weight: 600;">
+                    Memeriksa status server... ⏳
+                </div>
+
+                <form id="formAbsen" method="POST" action="https://script.google.com/macros/s/AKfycbzKtrWaUauP0n1sJx6efTKuSnyWgfEiTXkEkxx_YIhors7ktBNpjrE6DbsdCokYQdH7Og/exec" target="hidden_iframe">
+                    <div class="form-group">
+                        <label for="nrp">Nomor Registrasi Pokok (NRP)</label>
+                        <input type="number" id="nrp" name="nrp" placeholder="Contoh: 51255..." required>
+                    </div>
+                    <div class="form-group">
+                        <label for="nama">Nama Lengkap</label>
+                        <input type="text" id="nama" name="nama" placeholder="Masukkan nama..." required>
+                    </div>
+                    <div class="form-group">
+                        <label for="jabatan">Jabatan / Divisi</label>
+                        <select id="jabatan" name="jabatan" required>
+                            <option value="" disabled selected>-- Pilih Divisi --</option>
+                            <option value="FRAMMERS">FRAMMERS</option>
+                            <option value="SHOOTERS">SHOOTERS</option>
+                            <option value="CINEFICE">CINEFICE</option>
+                        </select>
+                    </div>
+                    
+                    <button type="submit" id="btnSubmit" class="btn-submit" style="display: none;">Kirim Kehadiran</button>
+                </form>
+                
+                <div id="pesanSukses" style="margin-top: 15px; padding: 10px; background-color: #d4edda; color: #155724; border-radius: 6px; text-align: center; display: none; font-size: 14px;">
+                    ✅ Berhasil absen! Data telah tersimpan.
+                </div>
+            </div>
+        </div>
+
+        <!-- TABEL DATA ABSENSI -->
+        <div id="area-tabel">
+            <div class="top-header">
+                <div style="font-weight: bold; font-size: 16px;">Rekapitulasi Kehadiran</div>
+            </div>
+            <div class="filter-bar">
+                <span style="font-size: 13px; color: #666; font-weight: 500;">Filter:</span>
+                <select id="filterTanggal" class="filter-select">
+                    <option value="hari-ini">Tanggal: Hari Ini</option>
+                    <option value="semua">Tanggal: Semua Data</option>
+                </select>
+                <select id="filterJabatan" class="filter-select">
+                    <option value="semua">Divisi: Semua</option>
+                    <option value="FRAMMERS">FRAMMERS</option>
+                    <option value="SHOOTERS">SHOOTERS</option>
+                    <option value="CINEFICE">CINEFICE</option>
+                </select>
+                <div style="margin-left: auto; color: #888; font-size: 12px;">Live DB</div>
+            </div>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Anggota</th>
+                            <th>NRP</th>
+                            <th>Divisi</th>
+                            <th>Tanggal</th>
+                            <th>Jam Hadir</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabel-body"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- HALAMAN JADWAL -->
+        <div id="area-jadwal">
+            <div style="width: 100%; max-width: 500px; margin-bottom: 20px;">
+                <h2 style="margin-top: 0;">Agenda Kegiatan</h2>
+                <div class="filter-bar" style="border-radius: 8px; padding: 10px 15px; display: flex; align-items: center; justify-content: space-between;">
+                    <span style="font-size: 13px; color: #666; font-weight: 500;">Divisi:</span>
+                    <select id="filterDivisiJadwal" class="filter-select" style="width: 80%;">
+                        <option value="SEMUA">Semua Kegiatan</option>
+                        <option value="FRAMMERS">FRAMMERS</option>
+                        <option value="SHOOTERS">SHOOTERS</option>
+                        <option value="CINEFICE">CINEFICE</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div id="container-jadwal" style="width: 100%; display: flex; flex-direction: column; align-items: center;">
+                <!-- Card Jadwal akan muncul di sini via JavaScript -->
+            </div>
+        </div>
+
+        <!-- HALAMAN ANGGOTA UKM -->
+        <div id="area-anggota">
+            <div class="top-header">
+                <div style="font-weight: bold; font-size: 16px;">Daftar Anggota UKM Cinemascope</div>
+            </div>
+            <div class="filter-bar">
+                <span style="font-size: 13px; color: #666; font-weight: 500;">Filter Divisi:</span>
+                <select id="filterDivisiAnggota" class="filter-select">
+                    <option value="SEMUA">Semua Divisi</option>
+                    <option value="FRAMMERS">FRAMMERS</option>
+                    <option value="SHOOTERS">SHOOTERS</option>
+                    <option value="CINEFICE">CINEFICE</option>
+                </select>
+                <div style="margin-left: auto; color: #888; font-size: 12px;">Database Anggota</div>
+            </div>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>No</th>
+                            <th>Nama Anggota</th>
+                            <th>NRP</th>
+                            <th>Divisi</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabel-anggota-body"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- HALAMAN ADMIN -->
+        <div id="area-pengaturan" style="display: none;">
+            <div class="card-form">
+                <h2>Panel Admin</h2>
+                <p style="font-size: 13px; color: #666; text-align: center; margin-bottom: 20px;">Masukkan Key Rahasia untuk Membuka atau Menutup Sesi Presensi.</p>
+                
+                <div class="form-group">
+                    <label for="inputKey">Kode Key Admin</label>
+                    <input type="password" id="inputKey" placeholder="Masukkan secret key...">
+                </div>
+
+                <div style="display: flex; gap: 10px; margin-top: 15px;">
+                    <button type="button" id="btnBuka" class="btn-submit" style="background-color: #27ae60; margin-top:0;">🟢 Buka Presensi </button>
+                    <button type="button" id="btnTutup" class="btn-submit" style="background-color: #c0392b; margin-top:0;">🔴 Tutup Presensi</button>
+                </div>
+
+                <div id="infoPesanAdmin" style="margin-top: 15px; padding: 10px; border-radius: 6px; text-align: center; font-size: 13px; display: none;"></div>
+            </div>
+        </div>
+
+    </div>
+
+    <iframe name="hidden_iframe" id="hidden_iframe" style="display:none;" onload="if(sudahKirim) { tampilkanSukses(); }"></iframe>
+
+    <script>
+        const scriptURL = 'https://script.google.com/macros/s/AKfycbzKtrWaUauP0n1sJx6efTKuSnyWgfEiTXkEkxx_YIhors7ktBNpjrE6DbsdCokYQdH7Og/exec'; 
+        const scriptURLJadwal = 'https://script.google.com/macros/s/AKfycbxTNcw1SkJ2HAd2Q-cC1vEX6_r_AUYy_gsr7u_sfSMz6GztG7dU8NOgGek8KogrvUZ2/exec'; 
+        const scriptURLAnggota = 'https://script.google.com/macros/s/AKfycbwb-XmM9F9Wn0got_7iWGV80N-De5g2INaaBKb6hjtwHpukGjRFdWX7RRy7sYxK_zfc/exec'; 
+        
+        const SECRET_KEY = "ping8.8.8.8"; 
+        
+        const menuItems = document.querySelectorAll('.menu li');
+        const areaForm = document.getElementById('area-form');
+        const areaTabel = document.getElementById('area-tabel');
+        const areaPengaturan = document.getElementById('area-pengaturan');
+        const areaJadwal = document.getElementById('area-jadwal');
+        const areaAnggota = document.getElementById('area-anggota');
+        const sidebarMenu = document.getElementById('sidebarMenu');
+        const btnToggle = document.getElementById('btnToggle');
+        
+        let dataAbsensiGlobal = []; 
+        let dataJadwalGlobal = [];
+        let dataAnggotaGlobal = [];
+        let statusPresensiServer = "tutup"; 
+        let sudahKirim = false;
+
+        cekStatusDariServer();
+        setInterval(cekStatusDariServer, 5000);
+        
+        btnToggle.addEventListener('click', function() {
+            sidebarMenu.classList.toggle('show');
+        });
+
+        // --- LOGIKA MENU ---
+        menuItems.forEach(item => {
+            item.addEventListener('click', function() {
+                menuItems.forEach(m => m.classList.remove('active'));
+                this.classList.add('active');
+                
+                if(window.innerWidth <= 768) sidebarMenu.classList.remove('show');
+                
+                let namaMenu = this.innerText.trim();
+                areaForm.style.display = 'none';
+                areaTabel.style.display = 'none';
+                areaPengaturan.style.display = 'none';
+                areaJadwal.style.display = 'none';
+                areaAnggota.style.display = 'none';
+
+                if (namaMenu.includes('Isi Absensi')) {
+                    areaForm.style.display = 'flex';
+                    cekStatusDariServer(); 
+                } else if (namaMenu.includes('Data Absensi')) {
+                    areaTabel.style.display = 'flex';
+                    ambilDataAbsen(); 
+                } else if (namaMenu.includes('Jadwal')) {
+                    areaJadwal.style.display = 'flex';
+                    ambilDataJadwal();
+                } else if (namaMenu.includes('Anggota UKM')) {
+                    areaAnggota.style.display = 'flex';
+                    ambilDataAnggota();
+                } else if (namaMenu.includes('Admin')) {
+                    areaPengaturan.style.display = 'flex';
+                    tampilkanSisaWaktuAdmin();
+                } else {
+                    alert('Halaman ' + namaMenu + ' masih dalam tahap pengembangan! 🚧');
+                }
+            });
+        });
+
+        // --- CEK STATUS DARI SERVER ---
+        async function cekStatusDariServer() {
+            try {
+                const response = await fetch(scriptURL);
+                const hasil = await response.json();
+                
+                let statusServer = hasil.statusPresensi || 'tutup';
+                let waktuBerakhirServer = hasil.waktuBerakhir || '';
+                
+                if (statusServer === 'buka' && waktuBerakhirServer) {
+                    if (new Date().getTime() > parseInt(waktuBerakhirServer)) {
+                        statusServer = 'tutup';
+                    }
+                }
+
+                statusPresensiServer = statusServer;
+                terapkanTampilanStatus(waktuBerakhirServer);
+            } catch (e) {
+                console.log("Gagal sinkronisasi status");
+            }
+        }
+
+        function terapkanTampilanStatus(waktuBerakhir) {
+            let btnSubmit = document.getElementById('btnSubmit');
+            let infoTutup = document.getElementById('infoStatusTutup');
+            
+            if (statusPresensiServer === 'tutup') {
+                if(btnSubmit) btnSubmit.style.display = 'none';
+                if(infoTutup) {
+                    infoTutup.style.display = 'block';
+                    infoTutup.style.backgroundColor = '#f8d7da';
+                    infoTutup.style.color = '#721c24';
+                    infoTutup.innerHTML = "🔒 Presensi saat ini sedang DITUTUP oleh Pengurus.";
+                }
+            } else {
+                if(btnSubmit) btnSubmit.style.display = 'block';
+                if(infoTutup) {
+                    infoTutup.style.display = 'block';
+                    let sisaMs = parseInt(waktuBerakhir) - new Date().getTime();
+                    let sisaMenit = Math.ceil(sisaMs / 60000);
+                    if (sisaMenit > 0) {
+                        infoTutup.style.backgroundColor = '#d1ecf1';
+                        infoTutup.style.color = '#0c5460';
+                        infoTutup.innerHTML = `🟢 Presensi DIBUKA. Otomatis tertutup dalam ${sisaMenit} menit ke depan.`;
+                    } else {
+                        infoTutup.style.backgroundColor = '#d1ecf1';
+                        infoTutup.style.color = '#0c5460';
+                        infoTutup.innerHTML = "🟢 Presensi DIBUKA oleh Pengurus.";
+                    }
+                }
+            }
+        }
+
+        // --- TOMBOL ADMIN ---
+        document.getElementById('btnBuka').addEventListener('click', () => kirimStatusKeServer('buka'));
+        document.getElementById('btnTutup').addEventListener('click', () => kirimStatusKeServer('tutup'));
+
+        async function kirimStatusKeServer(aksi) {
+            let key = document.getElementById('inputKey').value;
+            let info = document.getElementById('infoPesanAdmin');
+            
+            if (key !== SECRET_KEY) {
+                info.style.display = 'block';
+                info.style.backgroundColor = '#f8d7da';
+                info.style.color = '#721c24';
+                info.innerText = "❌ Kode Key Salah!";
+                return;
+            }
+
+            info.style.display = 'block';
+            info.style.backgroundColor = '#e2e8f0';
+            info.style.color = '#333';
+            info.innerText = "Mengirim status ke server... ⏳";
+
+            try {
+                let statusAksi = aksi === 'buka' ? 'buka' : 'tutup';
+                let waktuTarget = aksi === 'buka' ? (new Date().getTime() + (10 * 60 * 1000)) : ''; 
+
+                let formData = new URLSearchParams();
+                formData.append("action", "ubahStatus");
+                formData.append("status", statusAksi);
+                formData.append("waktuTutup", waktuTarget);
+
+                await fetch(scriptURL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    body: formData
+                });
+
+                info.style.backgroundColor = '#d4edda';
+                info.style.color = '#155724';
+                info.innerText = statusAksi === 'buka' ? "🟢 Presensi BERHASIL DIBUKA (10 Menit) untuk semua perangkat!" : "🔴 Presensi BERHASIL DITUTUP untuk semua perangkat!";
+                
+                setTimeout(cekStatusDariServer, 1500);
+            } catch (err) {
+                info.style.backgroundColor = '#f8d7da';
+                info.style.color = '#721c24';
+                info.innerText = "❌ Gagal terhubung ke server!";
+            }
+        }
+
+        function tampilkanSisaWaktuAdmin() {
+            cekStatusDariServer();
+        }
+
+        // --- PENGIRIMAN DATA ABSENSI ---
+        document.getElementById('formAbsen').addEventListener('submit', function(e) {
+            if (statusPresensiServer === 'tutup') {
+                e.preventDefault();
+                alert('Maaf, presensi sedang ditutup!');
+                return;
+            }
+            sudahKirim = true;
+            let btn = document.getElementById('btnSubmit');
+            btn.innerText = "Mengirim data... ⏳";
+            btn.disabled = true;
+        });
+
+        function tampilkanSukses() {
+            let btn = document.getElementById('btnSubmit');
+            let pesan = document.getElementById('pesanSukses');
+            
+            pesan.style.display = 'block';
+            btn.innerText = "Kirim Kehadiran";
+            btn.disabled = false;
+            document.getElementById('formAbsen').reset();
+            sudahKirim = false;
+
+            setTimeout(() => { pesan.style.display = 'none'; }, 3000);
+        }
+
+        // --- FILTER & GET DATA ABSENSI ---
+        document.getElementById('filterTanggal').addEventListener('change', jalankanFilter);
+        document.getElementById('filterJabatan').addEventListener('change', jalankanFilter);
+
+        function jalankanFilter() {
+            let valTgl = document.getElementById('filterTanggal').value;
+            let valJabatan = document.getElementById('filterJabatan').value;
+            renderTabel(valTgl, valJabatan);
+        }
+
+        async function ambilDataAbsen() {
+            const tbody = document.getElementById('tabel-body');
+            const dropdownTanggal = document.getElementById('filterTanggal');
+            
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding: 30px;">Sedang memuat data... ⏳</td></tr>';
+            
+            try {
+                const response = await fetch(scriptURL);
+                const hasil = await response.json();
+                dataAbsensiGlobal = hasil.dataAbsen || []; 
+                
+                let tanggalUnik = [];
+                dataAbsensiGlobal.forEach(row => {
+                    let tanggalAbsenObj = new Date(row.waktu);
+                    if (!isNaN(tanggalAbsenObj)) {
+                        let thn = tanggalAbsenObj.getFullYear();
+                        let bln = String(tanggalAbsenObj.getMonth() + 1).padStart(2, '0');
+                        let hari = String(tanggalAbsenObj.getDate()).padStart(2, '0');
+                        let formatTgl = `${thn}-${bln}-${hari}`;
+                        if (!tanggalUnik.includes(formatTgl)) tanggalUnik.push(formatTgl);
+                    }
+                });
+                
+                dropdownTanggal.innerHTML = `
+                    <option value="hari-ini">Tanggal: Hari Ini</option>
+                    <option value="semua">Tanggal: Semua Data</option>
+                `;
+                tanggalUnik.reverse().forEach(tgl => {
+                    let opt = document.createElement('option');
+                    opt.value = tgl;
+                    let parts = tgl.split('-');
+                    opt.text = "Tanggal: " + `${parts[2]}/${parts[1]}/${parts[0]}`; 
+                    dropdownTanggal.appendChild(opt);
+                });
+
+                document.getElementById('filterJabatan').value = 'semua';
+                jalankanFilter();
+                
+            } catch (error) {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:red;">Gagal terhubung ke database.</td></tr>';
+            }
+        }
+
+        function renderTabel(filterTgl, filterJab) {
+            const tbody = document.getElementById('tabel-body');
+            tbody.innerHTML = ''; 
+            
+            const d = new Date();
+            const formatHariIni = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+            
+            let dataDitampilkan = dataAbsensiGlobal.filter(row => {
+                let tanggalAbsenObj = new Date(row.waktu);
+                if (isNaN(tanggalAbsenObj)) return false;
+                
+                let formatAbsenStr = `${tanggalAbsenObj.getFullYear()}-${String(tanggalAbsenObj.getMonth() + 1).padStart(2, '0')}-${String(tanggalAbsenObj.getDate()).padStart(2, '0')}`;
+                
+                let lolosTgl = false;
+                if (filterTgl === 'semua') lolosTgl = true;
+                else if (filterTgl === 'hari-ini') lolosTgl = (formatAbsenStr === formatHariIni);
+                else lolosTgl = (formatAbsenStr === filterTgl);
+
+                let lolosJabatan = false;
+                let divisiData = row.jabatan ? String(row.jabatan).trim().toUpperCase() : '';
+                let divisiFilter = filterJab ? String(filterJab).trim().toUpperCase() : '';
+
+                if (divisiFilter === 'SEMUA') lolosJabatan = true;
+                else lolosJabatan = (divisiData === divisiFilter);
+
+                return lolosTgl && lolosJabatan;
+            });
+
+            if (dataDitampilkan.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding: 20px; color: #888;">Belum ada data kehadiran untuk filter ini.</td></tr>';
+                return;
+            }
+            
+            dataDitampilkan.reverse().forEach(row => {
+                let waktu = new Date(row.waktu);
+                let tanggal = waktu.toLocaleDateString('id-ID');
+                let jam = waktu.toLocaleTimeString('id-ID', {hour: '2-digit', minute:'2-digit'}) + ' WIB';
+                let inisial = row.nama ? row.nama.substring(0,2).toUpperCase() : '??';
+                let divisi = row.jabatan ? row.jabatan : '-';
+                
+                let tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td><div class="avatar">${inisial}</div> ${row.nama}</td>
+                    <td>${row.nrp}</td>
+                    <td><span class="badge-divisi">${divisi}</span></td>
+                    <td>${tanggal}</td>
+                    <td>${jam}</td>
+                    <td><span class="status-hadir">${row.status || 'Hadir'}</span></td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // --- FUNGSI JADWAL & MATERI ---
+        async function ambilDataJadwal() {
+            const container = document.getElementById('container-jadwal');
+            container.innerHTML = '<p style="color: #666;">Memuat jadwal kegiatan... ⏳</p>';
+            
+            try {
+                const response = await fetch(scriptURLJadwal);
+                dataJadwalGlobal = await response.json();
+                renderJadwal();
+            } catch (error) {
+                container.innerHTML = '<p style="color:red;">Gagal memuat jadwal dari server.</p>';
+            }
+        }
+
+        function renderJadwal() {
+            const container = document.getElementById('container-jadwal');
+            const filter = document.getElementById('filterDivisiJadwal').value;
+            container.innerHTML = '';
+            
+            let dataDitampilkan = dataJadwalGlobal.filter(row => {
+                if (filter === 'SEMUA') return true;
+                let div = row.divisi ? String(row.divisi).trim().toUpperCase() : '';
+                return div === filter || div === 'SEMUA';
+            });
+
+            if (dataDitampilkan.length === 0) {
+                container.innerHTML = '<p style="color:#888;">Belum ada jadwal kegiatan untuk divisi ini.</p>';
+                return;
+            }
+
+            dataDitampilkan.forEach(row => {
+                // Format Tanggal Pembersih Total (Anti Gagal)
+                let tglStr = '-';
+                if (row.tanggal) {
+                    let raw = String(row.tanggal);
+                    if (raw.includes('00:00:00') || raw.includes('GMT') || raw.includes('Sun') || raw.includes('Mon') || raw.includes('Tue') || raw.includes('Wed') || raw.includes('Thu') || raw.includes('Fri') || raw.includes('Sat')) {
+                        raw = raw.replace(' 00:00:00 GMT', '').replace(' 00:00:00 GM', '');
+                    }
+                    tglStr = raw;
+                }
+                
+                let jamStr = row.waktu ? String(row.waktu) : 'TBA';
+                if(jamStr.includes('T')) {
+                    let timePart = jamStr.split('T')[1];
+                    if(timePart) jamStr = timePart.substring(0, 5) + ' WIB';
+                }
+
+                let linkMateri = row.linkMateri ? String(row.linkMateri).trim() : '';
+                let tombolHTML = '';
+                if (linkMateri !== "") {
+                    tombolHTML = `<a href="${linkMateri}" target="_blank" class="btn-unduh aktif">Unduh Materi Kegiatan (PDF)</a>`;
+                } else {
+                    tombolHTML = `<div class="btn-unduh">Materi Belum Tersedia</div>`;
+                }
+
+                let card = document.createElement('div');
+                card.className = 'jadwal-card';
+                card.innerHTML = `
+                    <div class="jadwal-header">
+                        <h3>Jadwal Kegiatan</h3>
+                        <span class="badge-status">Sesuai Jadwal</span>
+                    </div>
+                    <div class="jadwal-tgl">📅 ${tglStr}</div>
+                    
+                    <div class="jadwal-info-row">
+                        <span class="jadwal-icon">🎬</span>
+                        <strong style="font-size: 15px;">${row.kegiatan || '-'}</strong>
+                    </div>
+                    
+                    <div class="jadwal-info-row">
+                        <span class="jadwal-icon">🕒</span>
+                        <span>${jamStr}</span>
+                    </div>
+                    
+                    <div class="jadwal-notes">
+                        ${row.deskripsi || 'Tidak ada deskripsi tambahan.'}
+                    </div>
+                    
+                    <div class="jadwal-info-row">
+                        <span class="jadwal-icon">📍</span>
+                        <span>${row.lokasi || row.Lokasi || 'TBA'}</span>
+                    </div>
+                    
+                    <div style="border-top: 1px dashed #ccc; margin-top: 15px; padding-top: 15px; text-align: center; font-size: 12px; color: #555;">
+                        Target: <strong>${row.divisi || 'SEMUA DIVISI'}</strong>
+                    </div>
+                    
+                    ${tombolHTML}
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        document.getElementById('filterDivisiJadwal').addEventListener('change', renderJadwal);
+
+        // --- FUNGSI ANGGOTA UKM ---
+        async function ambilDataAnggota() {
+            const tbody = document.getElementById('tabel-anggota-body');
+            tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding: 30px;">Memuat data anggota... ⏳</td></tr>';
+            
+            try {
+                const response = await fetch(scriptURLAnggota);
+                dataAnggotaGlobal = await response.json();
+                renderAnggota();
+            } catch (error) {
+                tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:red;">Gagal memuat data anggota dari server.</td></tr>';
+            }
+        }
+
+        function renderAnggota() {
+            const tbody = document.getElementById('tabel-anggota-body');
+            const filter = document.getElementById('filterDivisiAnggota').value;
+            tbody.innerHTML = '';
+            
+            let dataDitampilkan = dataAnggotaGlobal.filter(row => {
+                if (filter === 'SEMUA') return true;
+                let div = row.divisi ? String(row.divisi).trim().toUpperCase() : '';
+                return div === filter;
+            });
+
+            if (dataDitampilkan.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding: 20px; color: #888;">Belum ada data anggota untuk divisi ini.</td></tr>';
+                return;
+            }
+
+            dataDitampilkan.forEach((row, index) => {
+                let inisial = row.nama ? row.nama.substring(0,2).toUpperCase() : '??';
+                let tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${index + 1}</td>
+                    <td><div class="avatar">${inisial}</div> ${row.nama || '-'}</td>
+                    <td>${row.nrp || '-'}</td>
+                    <td><span class="badge-divisi">${row.divisi || '-'}</span></td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        document.getElementById('filterDivisiAnggota').addEventListener('change', renderAnggota);
+    </script>
+</body>
+</html>
