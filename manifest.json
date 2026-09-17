@@ -4,9 +4,9 @@
   "display": "standalone",
   "name": "PressScope",
   "orientation": "any",
-  "scope": "/",
+  "scope": "/PressScope/",
   "short_name": "PressScope",
-  "start_url": "/",
+  "start_url": "/PressScope/",
   "theme_color": "#ffffff",
   "id": "com.ukm.pressscope"
 }
